@@ -660,7 +660,8 @@ class FanController:
 
         power_rail_sensors = []
         for hwmon in power_rail_hwmons:
-            register = int(hwmon.stem.split('@')[-1], 16) #convert hex value
+            node = (hwmon / 'of_node').resolve()
+            register = int(node.stem.split('@')[-1], 16) #convert hex value
             model = 'ev2' if "EV1" in model_stdout or "EV2" in model_stdout else 'ev3'
             channels = channel_definitions.get(model).get(register)
             for index, channel in enumerate(channels):
