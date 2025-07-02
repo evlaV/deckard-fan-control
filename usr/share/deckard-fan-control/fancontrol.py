@@ -588,7 +588,6 @@ def get_full_path(base_path, name) -> str:
 
     raise FileNotFoundError(f"failed to find device {name}")
 
-
 def get_all_paths(base_path: str, name: str) -> list[Path]:
     """Find all hwmon* directories under base_path with matching device name."""
     base = Path(base_path)
@@ -858,7 +857,6 @@ class FanController:
         print("Setting fan to max speed and exiting")
         self.fan.set_speed(self.fan.max_speed)
         exit()
-
 
 # main
 if __name__ == "__main__":
