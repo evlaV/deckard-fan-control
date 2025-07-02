@@ -1,2 +1,2 @@
 #!/bin/bash
-python3 /usr/share/jupiter-fan-control/fancontrol.py --run
+python3 /usr/share/deckard-fan-control/fancontrol.py --run

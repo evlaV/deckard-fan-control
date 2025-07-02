@@ -1,7 +1,7 @@
 #! /bin/bash
-systemctl stop fancontrol
+# systemctl stop fancontrol
 fanspeed 80
-systemctl stop jupiter-fan-control
+systemctl stop deckard-fan-control
 systemctl daemon-reload
-systemctl enable --now jupiter-fan-control
-journalctl -u jupiter-fan-control -f
+systemctl enable --now deckard-fan-control
+journalctl -u deckard-fan-control -f
