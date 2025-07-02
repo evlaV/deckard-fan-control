@@ -35,13 +35,13 @@ power_rail_sensors:
   - channel_name: GFX
     nice_name: P_GFX
     sensor_time_avg: 24
-  - channel_name: 'APC0 Cores'
+  - channel_name: APC0 Cores
     nice_name: P_APC0
     sensor_time_avg: 24
-  - channel_name: 'APC1 Cores'
+  - channel_name: APC1 Cores
     nice_name: P_APC1
     sensor_time_avg: 24
-  - channel_name: 'APC2 Cores'
+  - channel_name: APC2 Cores
     nice_name: P_APC2
     sensor_time_avg: 24
 

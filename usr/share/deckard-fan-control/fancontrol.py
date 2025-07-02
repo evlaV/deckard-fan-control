@@ -706,8 +706,8 @@ class FanController:
                                 t_slow=self.slow_loop_interval,
                                 )
                             power_rail_sensors.append(prs)
-            print(f'initialized {len(power_rail_sensors)} power rail sensors')
-            return power_rail_sensors
+        print(f'initialized {len(power_rail_sensors)} power rail sensors')
+        return power_rail_sensors
 
     def print_single(self, source_name):
         """pretty print all device values, temp source, and output"""
