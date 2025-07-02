@@ -720,7 +720,7 @@ class FanController:
             # print("{}: {}  ".format(device.nice_name, device.measured_temp), end = '')
         for iiosensor in self.iiosensors:
             print(
-                f"{iiosensor.nice_name}: {iiosensor.get_value():.1f}  ",
+                f"{iiosensor.nice_name}: {iiosensor.get_temp():.1f}  ",
                 end="",
             )
         for prs in self.power_rail_sensors:
