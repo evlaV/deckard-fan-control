@@ -673,6 +673,10 @@ class FanController:
                 f"{iiosensor.nice_name}: {iiosensor.get_value():.1f}  ",
                 end="",
             )
+        for prs in self.power_rail_sensors:
+            print(f"{prs.nice_name}: {prs.get_avg_value():.1f}  ",
+                end="",
+            )
         print(
             f"{self.power_sensor.nice_name}: {self.power_sensor.value:.1f}/{self.power_sensor.avg_value:.1f}  ",
             end="",
