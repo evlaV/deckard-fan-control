@@ -466,10 +466,10 @@ class PowerRailSensor(Sensor):
         """returns instantaneous value"""
         try:
             with open(self.sensor_path, "r", encoding="utf-8") as f:
-                value = int(f.read().strip()) / -1000 # FIXME define units in init or config, define positive / negative
+                value = int(f.read().strip()) / 1000000
             return value
         except Exception as e:
-            print('An exception occurred when attempting to read value: {}'.format(e))
+            print('An exception occurred when attempting to read prs value: {}'.format(e))
             return -1
 
     def get_avg_value(self) -> float:
@@ -838,7 +838,7 @@ class FanController:
                 device for device in self.devices if device.control_output == max_output
             ).nice_name
             # print all values
-            self.print_single(source_name) #FIXME disable this for prod
+            # self.print_single(source_name) #FIXME disable this for prod
             # log all values
             try:
                 self.log_single(source_name)
