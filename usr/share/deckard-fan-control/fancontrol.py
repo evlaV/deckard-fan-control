@@ -840,7 +840,7 @@ class FanController:
                 device for device in self.devices if device.control_output == max_output
             ).nice_name
             # print all values
-            # self.print_single(source_name) #FIXME disable this for prod
+            self.print_single(source_name) #FIXME disable this for prod
             # log all values
             try:
                 self.log_single(source_name)
