@@ -122,7 +122,7 @@ class FeedForwardQuad:
         self.a_ff = a_ff
         self.b_ff = b_ff
         # self.temp_setpoint = temp_setpoint
-        self.ff_deadzone = 10 #TODO FIXME
+        self.ff_deadzone = 1 #TODO FIXME
         self.ff_last_setpoint = 0
         self.quad = Quadratic(a_quad, b_quad, c_quad)
         self.output = 0
@@ -140,6 +140,13 @@ class FeedForwardQuad:
             self.ff_last_setpoint = rpm_setpoint
             return rpm_setpoint
         return self.ff_last_setpoint
+    
+    # if (  # check if temp is increasing, or has decreased past hysteresis
+    #         self.avg_temp > self.prev_control_temp
+    #         or self.prev_control_temp - self.avg_temp > self.temp_hysteresis
+    #     ):
+    #         self.control_temp = self.avg_temp
+    #         self.prev_control_temp = self.control_temp
 
     def update(self, temp_input, power_input) -> int:
         """run controller to update output"""
@@ -147,7 +154,7 @@ class FeedForwardQuad:
         ff_output = self.get_ff_setpoint(power_input)
         # min_setpoint = self.get_min_setpoint(temp_input)
         self.output = quad_output + ff_output
-        # self.print_ff_state(ff_output, quad_output)
+        self.print_ff_state(ff_output, quad_output)
         return self.output
 
 class Dummy:
@@ -206,7 +213,6 @@ class Fan:
             self.measured_speed = 0
         return self.measured_speed
         
-
     def get_charge_state(self) -> bool:
         """updates min rpm depending on charge state"""
         #FIXME hodged for deckard, always return false
