@@ -570,7 +570,7 @@ def get_all_paths(base_path: str, name: str) -> list[Path]:
             if test_name == name:
                 print(f"found hwmon {name} at {directory}/")  # FIXME clean up debug statements
                 matches.append(
-                    str(directory.resolve())
+                    directory.resolve()
                     )
         except Exception:
             pass
