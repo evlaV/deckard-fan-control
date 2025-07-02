@@ -33,13 +33,14 @@ ec_ramp_rate: 10
 # C_quad_control: &C_quad_control 20.345
 
 # testing new curve
-A_quad_control: &A_quad_control 0.00318
-B_quad_control: &B_quad_control -0.0110
-C_quad_control: &C_quad_control 20.345
+A_quad_control: &A_quad_control 0.00543593
+B_quad_control: &B_quad_control -.2789
+C_quad_control: &C_quad_control 27.452
+# quadratic fit (40,25)(71,35)(80,40)(95,50)
 
-A_ff_control: &A_ff_control .03333
-B_ff_control: &B_ff_control -.03333
-# linear fit (1,-2),(10,15)
+A_ff_control: &A_ff_control 2.1
+B_ff_control: &B_ff_control -1
+# linear fit (0,-1),(10,20)
 
 
 # temp_hysterises is the degrees C a device must drop
