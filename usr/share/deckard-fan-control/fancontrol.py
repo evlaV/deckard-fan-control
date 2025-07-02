@@ -777,6 +777,10 @@ class FanController:
         for iiosensor in self.iiosensors:
             iiosensor.get_temp()
 
+        self.power_rail_sensor_sum = 0
+        for prs in self.power_rail_sensors:
+            self.power_rail_sensor_sum += prs.get_avg_value()
+
         # choose between low and high power loop interval
         # loop_interval = (
         #     self.slow_loop_interval
@@ -820,7 +824,8 @@ class FanController:
             # read charge state
             self.fan.get_charge_state()
             for device in self.devices:
-                device.get_output(self.power_sensor.avg_value)
+                # device.get_output(self.power_sensor.avg_value)
+                device.get_output(self.power_rail_sensor_sum)
             max_output = max(device.control_output for device in self.devices)
             self.fan.set_speed(max_output)
             # find source name for the max control output
