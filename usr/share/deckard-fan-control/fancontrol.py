@@ -536,7 +536,7 @@ def get_full_path(base_path: str, name: str) -> Path:
             test_name = (directory / "name").read_text(encoding="utf-8").strip()
             if test_name == name:
                 print(f"found hwmon {name} at {directory}/")  # FIXME clean up debug statements
-                return directory.resolve()
+                return str(directory.resolve())
         except Exception:
             pass
 
@@ -552,7 +552,9 @@ def get_all_paths(base_path: str, name: str) -> list[Path]:
             test_name = (directory / "name").read_text(encoding="utf-8").strip()
             if test_name == name:
                 print(f"found hwmon {name} at {directory}/")  # FIXME clean up debug statements
-                matches.append(directory.resolve())
+                matches.append(
+                    str(directory.resolve())
+                    )
         except Exception:
             pass
 
@@ -814,7 +816,9 @@ if __name__ == "__main__":
     #     )
 
     # Deckard doesn't have a DMI_ID, we just hardcode which thing to load:
-    config_file_path = "/usr/share/deckard-fan-control/deckard-config.yaml"
+    # config_file_path = "/usr/share/deckard-fan-control/deckard-config.yaml"
+    config_file_path = "./usr/share/deckard-fan-control/deckard-config.yaml"
+
     controller = FanController(config_file=config_file_path)
 
     # # catch fan service trying to start before the hwmonitors are fully loaded
