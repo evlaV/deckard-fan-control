@@ -450,7 +450,7 @@ class Sensor:
         return self.avg_value
 
 class PowerRailSensor(Sensor):
-    def __init__(self, hwmon_path, sensor_idex, nice_name, config, t_fast, t_slow):
+    def __init__(self, hwmon_path, sensor_idex, config, t_fast, t_slow):
         self.sensor_path = hwmon_path / f'power{sensor_idex+1}_input'
 
         self.nice_name = config["nice_name"]
@@ -670,11 +670,11 @@ class FanController:
                     for config in prs_configs:
                         if config.get('channel_name') == channel:
                             prs = PowerRailSensor(
-                                hwmon,
-                                index,
-                                config,
-                                self.fast_loop_interval,
-                                self.slow_loop_interval,
+                                hwmon_path=hwmon,
+                                sensor_idex=index,
+                                config=config,
+                                t_fast=self.fast_loop_interval,
+                                t_slow=self.slow_loop_interval,
                                 )
                             power_rail_sensors.append(prs)
             print(f'initialized {len(power_rail_sensors)} power rail sensors')
