@@ -740,8 +740,11 @@ class FanController:
             header.append(f"{device.nice_name}_OUT")
         for iiosensor in self.iiosensors:
             header.append(f"{iiosensor.nice_name}_TEMP")            
-        header.append(f"{self.power_sensor.nice_name}")
-        header.append(f"{self.power_sensor.nice_name}_AVG")
+        for prs in self.power_rail_sensors:
+            header.append(f"{prs.nice_name}")
+            header.append(f"{prs.nice_name}_AVG")
+        # header.append(f"{self.power_sensor.nice_name}")
+        # header.append(f"{self.power_sensor.nice_name}_AVG")
         header.append(f"FAN_SRC")
         header.append(f"FAN_TARGET")
         header.append(f"FAN_REAL")
@@ -755,8 +758,11 @@ class FanController:
             row.append(int(device.control_output))
         for iiosensor in self.iiosensors:
             row.append(int(iiosensor.measured_temp)) 
-        row.append(f"{self.power_sensor.value:.2f}")
-        row.append(f"{self.power_sensor.avg_value:.2f}")
+        for prs in self.power_rail_sensors:
+            row.append(f"{prs.value:.2f}")    
+            row.append(f"{prs.avg_value:.2f}")
+        # row.append(f"{self.power_sensor.value:.2f}")
+        # row.append(f"{self.power_sensor.avg_value:.2f}")
         row.append(source_name)
         row.append(int(self.fan.fc_speed))
         row.append(self.fan.measured_speed)
@@ -833,7 +839,7 @@ class FanController:
                 device for device in self.devices if device.control_output == max_output
             ).nice_name
             # print all values
-            # self.print_single(source_name)
+            self.print_single(source_name) #FIXME disable this for prod
             # log all values
             try:
                 self.log_single(source_name)
