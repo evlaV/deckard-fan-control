@@ -418,6 +418,9 @@ class Sensor:
         self.avg_value = self.power_threshold  # TODO should this start higher?
         self.is_low_power = True
 
+        self.values_buffer = deque([self.avg_value] * self.n_avg_slow)
+
+
     def get_value(self) -> float:
         """returns instantaneous value"""
         with open(self.sensor_path, "r", encoding="utf-8") as f:
