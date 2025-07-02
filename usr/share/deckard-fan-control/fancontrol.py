@@ -742,6 +742,7 @@ class FanController:
         for prs in self.power_rail_sensors:
             header.append(f"{prs.nice_name}")
             header.append(f"{prs.nice_name}_AVG")
+        header.append(f"PRS_SUM")
         # header.append(f"{self.power_sensor.nice_name}")
         # header.append(f"{self.power_sensor.nice_name}_AVG")
         header.append(f"FAN_SRC")
@@ -760,6 +761,7 @@ class FanController:
         for prs in self.power_rail_sensors:
             row.append(f"{prs.value:.2f}")    
             row.append(f"{prs.avg_value:.2f}")
+        row.append(f"{self.power_rail_sensor_sum:.2f}")
         # row.append(f"{self.power_sensor.value:.2f}")
         # row.append(f"{self.power_sensor.avg_value:.2f}")
         row.append(source_name)
