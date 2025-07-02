@@ -528,19 +528,36 @@ class DeckardPowerSensor:
             self.avg_value = -1
         return self.avg_value
 
-def get_full_path(base_path: str, name: str) -> Path:
-    """Helper function to find correct hwmon* path for a given device name."""
-    base = Path(base_path)
-    for directory in base.iterdir():
+# def get_full_path(base_path: str, name: str) -> Path:
+#     """Helper function to find correct hwmon* path for a given device name."""
+#     base = Path(base_path)
+#     for directory in base.iterdir():
+#         try:
+#             test_name = (directory / "name").read_text(encoding="utf-8").strip()
+#             if test_name == name:
+#                 print(f"found hwmon {name} at {directory}/")  # FIXME clean up debug statements
+#                 return str(directory.resolve())
+#         except Exception:
+#             pass
+
+#     raise FileNotFoundError(f"failed to find device {name}")
+
+def get_full_path(base_path, name) -> str:
+    """helper function to find correct hwmon* path for a given device name"""
+    for directory in os.listdir(base_path):
+        full_path = base_path + directory + "/"
         try:
-            test_name = (directory / "name").read_text(encoding="utf-8").strip()
+            test_name = open(full_path + "name", encoding="utf8").read().strip()
             if test_name == name:
-                print(f"found hwmon {name} at {directory}/")  # FIXME clean up debug statements
-                return str(directory.resolve())
-        except Exception:
+                return full_path
+        except:
+            # print(f'failed to open {directory} folder for sensor {name}')
             pass
+        # else:
+        #    print(f'Sensor path for {name} was not found')
 
     raise FileNotFoundError(f"failed to find device {name}")
+
 
 def get_all_paths(base_path: str, name: str) -> list[Path]:
     """Find all hwmon* directories under base_path with matching device name."""
