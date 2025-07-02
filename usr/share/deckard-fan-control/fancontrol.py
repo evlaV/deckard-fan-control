@@ -9,7 +9,7 @@ import time
 import math
 import yaml
 import csv
-import argparse
+import subprocess
 from PID import PID
 
 
@@ -400,7 +400,6 @@ class Device:
             self.control_output = self.fan_max_speed
         return self.control_output
 
-
 class Sensor:
     """sensor for measuring non-temperature values"""
 
@@ -449,6 +448,20 @@ class Sensor:
 
         self.avg_value = math.fsum(self.values_buffer) / len(self.values_buffer)
         return self.avg_value
+
+class PowerRailSensor(Sensor):
+    def __init__(self, hwmon_path, sensor_idex, nice_name, config, t_fast, t_slow):
+        self.sensor_path = hwmon_path / f'power{sensor_idex+1}_input'
+
+        self.nice_name = config["nice_name"]
+        self.power_threshold = .1#config["low_power_threshold"]
+        sensor_time_avg = config["sensor_time_avg"]
+        sensor_time_avg = sensor_time_avg
+        self.n_avg_slow = int(sensor_time_avg / t_slow)
+        self.n_avg_fast = int(sensor_time_avg / t_fast)
+
+        self.avg_value = self.power_threshold  # TODO should this start higher?
+        self.is_low_power = True
 
 class IIOSensor:
     """IIO temp sensors"""
@@ -515,23 +528,38 @@ class DeckardPowerSensor:
             self.avg_value = -1
         return self.avg_value
 
-def get_full_path(base_path, name) -> str:
-    """helper function to find correct hwmon* path for a given device name"""
-    for directory in os.listdir(base_path):
-        full_path = base_path + directory + "/"
+def get_full_path(base_path: str, name: str) -> Path:
+    """Helper function to find correct hwmon* path for a given device name."""
+    base = Path(base_path)
+    for directory in base.iterdir():
         try:
-            test_name = open(full_path + "name", encoding="utf8").read().strip()
+            test_name = (directory / "name").read_text(encoding="utf-8").strip()
             if test_name == name:
-                print(f'found hwmon {name} at {full_path}') #FIXME clean up debug statements
-                return full_path
-        except:
-            # print(f'failed to open {directory} folder for sensor {name}')
+                print(f"found hwmon {name} at {directory}/")  # FIXME clean up debug statements
+                return directory.resolve()
+        except Exception:
             pass
-        # else:
-        #    print(f'Sensor path for {name} was not found')
 
     raise FileNotFoundError(f"failed to find device {name}")
 
+def get_all_paths(base_path: str, name: str) -> list[Path]:
+    """Find all hwmon* directories under base_path with matching device name."""
+    base = Path(base_path)
+    matches = []
+
+    for directory in base.iterdir():
+        try:
+            test_name = (directory / "name").read_text(encoding="utf-8").strip()
+            if test_name == name:
+                print(f"found hwmon {name} at {directory}/")  # FIXME clean up debug statements
+                matches.append(directory.resolve())
+        except Exception:
+            pass
+
+    if not matches:
+        raise FileNotFoundError(f"failed to find any device named {name}")
+
+    return matches
 
 class FanController:
     """main FanController class"""
@@ -577,9 +605,11 @@ class FanController:
         ]
 
         # initialize Deckard power sensor
-        self.power_sensor = DeckardPowerSensor(
-            self.config["deckardpowersensor"][0],
-        )
+        # self.power_sensor = DeckardPowerSensor(
+        #     self.config["deckardpowersensor"][0],
+        # )
+
+        self.power_rail_sensors = self.initialize_power_rail_sensors(self.base_hwmon_path, self.config["power_rail_sensors"])
 
         self.iiosensors = [
             IIOSensor(
@@ -590,6 +620,45 @@ class FanController:
 
         # exit handler
         signal.signal(signal.SIGTERM, self.on_exit)
+
+    def initialize_power_rail_sensors(self, base_path:str, prs_configs, hwmon_name: str = 'max34417') -> list[PowerRailSensor]:
+        requested_channels = [prs_config.get('channel_name') for prs_config in prs_configs]
+        channel_definitions = {
+            'ev2': {
+                0x12: ["APC1 Cores", "APC2 Cores", "APC0 Cores", "Tensor NSP1"],
+                0x1a: ["GFX", "Tensor NSP2", "VPH", "Unused"],
+                0x10: ["BOB", "S6C", "S1C", "S3C"]
+            },
+            'ev3': {
+                0x12: ["APC0 Cores", "APC2 Cores", "APC1 Cores", "Tensor NSP1"],
+                0x1a: ["GFX", "Tensor NSP2", "BOB", "Unused"],
+                0x10: ["VPH", "S6C", "S3C", "S1C"]
+            },
+
+        }
+        power_rail_hwmons = get_all_paths(base_path, hwmon_name)
+        model_stdout = subprocess.run(['vrdevice_path', 'model'], capture_output=True, text=True).stdout
+
+        power_rail_sensors = []
+        for hwmon in power_rail_hwmons:
+            register = int(hwmon.stem.split('@')[-1], 16) #convert hex value
+            model = 'ev2' if "EV1" in model_stdout or "EV2" in model_stdout else 'ev3'
+            channels = channel_definitions.get(model).get(register)
+            for index, channel in enumerate(channels):
+                # check if channel is requested in config
+                if channel in requested_channels:
+                    for config in prs_configs:
+                        if config.get('channel_name') == channel:
+                            prs = PowerRailSensor(
+                                hwmon,
+                                index,
+                                config,
+                                self.fast_loop_interval,
+                                self.slow_loop_interval,
+                                )
+                            power_rail_sensors.append(prs)
+            print(f'initialized {len(power_rail_sensors)} power rail sensors')
+            return power_rail_sensors
 
     def print_single(self, source_name):
         """pretty print all device values, temp source, and output"""
@@ -646,18 +715,21 @@ class FanController:
     def loop_read_sensors(self):
         """internal loop to measure device temps and sensor value"""
         start_time = time.time()
-        self.power_sensor.get_avg_value()
+        for prs in self.power_rail_sensors:
+            prs.get_avg_value()
+        # self.power_sensor.get_avg_value()
         for device in self.devices:
             device.get_avg_temp()
         for iiosensor in self.iiosensors:
             iiosensor.get_temp()
 
         # choose between low and high power loop interval
-        loop_interval = (
-            self.slow_loop_interval
-            if self.power_sensor.is_low_power
-            else self.fast_loop_interval
-        )
+        # loop_interval = (
+        #     self.slow_loop_interval
+        #     if self.power_sensor.is_low_power
+        #     else self.fast_loop_interval
+        # )
+        loop_interval = self.fast_loop_interval #FIXME make this dynamic
 
         sleep_time = loop_interval - (time.time() - start_time)
         if sleep_time > 0:

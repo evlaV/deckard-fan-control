@@ -31,13 +31,13 @@ C_quad_control: &C_quad_control 20.345
 # before it will change to a lower control output
 temp_hysteresis: &temp_hysteresis 20
 
-deckardpowersensor:
-  - sensor_name: power_avg_recent
-    base_path: /sys/bus/iio/devices/iio:device1/
-    nice_name: P_BAT
-    sensor_avg_name: power_avg
-    watts_conversion_factor: 1000
-    enable_on_start: True # Deckard power sensor needs to be started after reboot
+power_rail_sensors:
+  - channel_name: GFX
+    nice_name: P_GFX
+    sensor_time_avg: 24
+  - channel_name: APC0 Cores
+    nice_name: P_APC0
+    sensor_time_avg: 24
 
 iiosensors:
   - sensor_name: in_temp_pcba_at_40pin_connector_input
