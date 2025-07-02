@@ -420,13 +420,9 @@ class Sensor:
 
     def get_value(self) -> float:
         """returns instantaneous value"""
-        try:
-            with open(self.sensor_path, "r", encoding="utf-8") as f:
-                value = int(f.read().strip()) / -1000 # FIXME define units in init or config, define positive / negative
-            return value
-        except Exception as e:
-            print('An exception occurred when attempting to read value: {}'.format(e))
-            return -1
+        with open(self.sensor_path, "r", encoding="utf-8") as f:
+            value = int(f.read().strip()) / 1000000
+        return value
 
     def get_avg_value(self) -> float:
         """returns average value"""
@@ -462,6 +458,37 @@ class PowerRailSensor(Sensor):
 
         self.avg_value = self.power_threshold  # TODO should this start higher?
         self.is_low_power = True
+
+    def get_value(self) -> float:
+        """returns instantaneous value"""
+        try:
+            with open(self.sensor_path, "r", encoding="utf-8") as f:
+                value = int(f.read().strip()) / -1000 # FIXME define units in init or config, define positive / negative
+            return value
+        except Exception as e:
+            print('An exception occurred when attempting to read value: {}'.format(e))
+            return -1
+
+    def get_avg_value(self) -> float:
+        """returns average value"""
+        self.value = self.get_value()
+        if self.is_low_power and self.value > self.power_threshold:
+            # low power state -> high power state
+            self.is_low_power = False
+            self.values_buffer = deque([self.avg_value] * (self.n_avg_fast - 1))
+            self.values_buffer.append(self.value)
+        elif not self.is_low_power and self.value <= self.power_threshold:
+            # high power state -> low power state
+            self.is_low_power = True
+            self.values_buffer = deque([self.avg_value] * (self.n_avg_slow - 1))
+            self.values_buffer.append(self.value)
+        else:
+            # pop oldest value and append latest reading
+            self.values_buffer.popleft()
+            self.values_buffer.append(self.value)
+
+        self.avg_value = math.fsum(self.values_buffer) / len(self.values_buffer)
+        return self.avg_value
 
 class IIOSensor:
     """IIO temp sensors"""
