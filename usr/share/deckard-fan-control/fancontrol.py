@@ -405,8 +405,7 @@ class Sensor:
 
     def __init__(self, base_path, config, t_fast, t_slow) -> None:
         self.sensor_path = (
-            # get_full_path(base_path, config["hwmon_name"]) + config["sensor_name"]
-            "/sys/bus/iio/devices/iio:device1/" + config["sensor_name"] # FIXME get rid of hardcode, value stolen from /usr/local/bin/vrdevice_path
+            get_full_path(base_path, config["hwmon_name"]) + config["sensor_name"]
         )
 
         self.nice_name = config["nice_name"]
@@ -419,7 +418,6 @@ class Sensor:
         self.is_low_power = True
 
         self.values_buffer = deque([self.avg_value] * self.n_avg_slow)
-
 
     def get_value(self) -> float:
         """returns instantaneous value"""
@@ -461,6 +459,8 @@ class PowerRailSensor(Sensor):
 
         self.avg_value = self.power_threshold  # TODO should this start higher?
         self.is_low_power = True
+
+        self.values_buffer = deque([self.avg_value] * self.n_avg_slow)
 
     def get_value(self) -> float:
         """returns instantaneous value"""
@@ -727,10 +727,10 @@ class FanController:
             print(f"{prs.nice_name}: {prs.get_avg_value():.1f}  ",
                 end="",
             )
-        print(
-            f"{self.power_sensor.nice_name}: {self.power_sensor.value:.1f}/{self.power_sensor.avg_value:.1f}  ",
-            end="",
-        )
+        # print(
+        #     f"{self.power_sensor.nice_name}: {self.power_sensor.value:.1f}/{self.power_sensor.avg_value:.1f}  ",
+        #     end="",
+        # )
         print(f"Fan[{source_name}]: {int(self.fan.fc_speed)}/{self.fan.measured_speed}")
 
     def log_header(self):
