@@ -122,10 +122,12 @@ class FeedForwardQuad:
         self.a_ff = a_ff
         self.b_ff = b_ff
         # self.temp_setpoint = temp_setpoint
-        self.ff_deadzone = 300
+        self.ff_deadzone = 10 #TODO FIXME
         self.ff_last_setpoint = 0
         self.quad = Quadratic(a_quad, b_quad, c_quad)
         self.output = 0
+
+        print(f'INIT | Quad: {a_quad}X^2 + {b_quad}X + {c_quad}    FF: {a_ff}X + {b_ff}')
 
     def print_ff_state(self, ff_output, quad_output):
         """prints state variables of FF and PID, helpful for debug"""
@@ -170,7 +172,6 @@ class DmiId:
             return open(self.id / identifier, "r", encoding="utf-8").read().strip()
         except FileNotFoundError:
             return None
-
 
 class Fan:
     """fan object controls all jupiter hwmon parameters"""
