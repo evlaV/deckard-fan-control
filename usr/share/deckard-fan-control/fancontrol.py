@@ -194,12 +194,17 @@ class Fan:
         self.gain = config["fan_gain"]
         self.rpm_scale = config["fan_rpm_scale"]
         self.ec_ramp_rate = config["ec_ramp_rate"]
+        self.fan_hysteresis = config["fan_hysteresis"]
         self.fc_speed = 0
         self.measured_speed = 0
         self.time_on = 0
         self.cold_off = True
         self.charge_state = False
         self.has_std_bios = True
+
+        self._hyst_min = 0
+        self._hyst_max = 0
+
         self.set_speed(.3) # FIXME remove hardcode
         time.sleep(.2)
 
@@ -226,6 +231,21 @@ class Fan:
             self.charge_state = False
         return self.charge_state
 
+
+    def _apply_hysteresis(self, new_speed: float) -> float:
+        """Applies hysteresis filtering on fan output."""
+        if new_speed > self._hyst_max:
+            self._hyst_max = new_speed
+            self._hyst_min = new_speed - self.fan_hysteresis
+            return new_speed
+        elif new_speed < self._hyst_min:
+            self._hyst_min = new_speed
+            self._hyst_max = new_speed + self.fan_hysteresis
+            return new_speed
+        else:
+            return self.fc_speed  # within hysteresis window
+        
+    
     def set_speed(self, speed) -> None:
         """sets a new target speed"""
 
@@ -245,6 +265,8 @@ class Fan:
         if speed > self.min_speed and self.cold_off:
             self.time_on = int(time.time())
             self.cold_off = False
+
+        speed = self._apply_hysteresis(speed)
         self.fc_speed = speed
         try:
             with open(self.fan_path + "pwm1", "w", encoding="utf8") as f: #FIXME fan1_target --> pwm1, make this change less hidden
@@ -499,6 +521,47 @@ class PowerRailSensor(Sensor):
 
         self.avg_value = math.fsum(self.values_buffer) / len(self.values_buffer)
         return self.avg_value
+
+class PRS_Sum():
+    channel_definitions = {
+            'ev2': {
+                0x12: ["APC1 Cores", "APC2 Cores", "APC0 Cores", "Tensor NSP1"],
+                0x1a: ["GFX", "Tensor NSP2", "VPH", "Unused"],
+                0x10: ["BOB", "S6C", "S1C", "S3C"]
+            },
+            'ev3': {
+                0x12: ["APC0 Cores", "APC2 Cores", "APC1 Cores", "Tensor NSP1"],
+                0x1a: ["GFX", "Tensor NSP2", "BOB", "Unused"],
+                0x10: ["VPH", "S6C", "S3C", "S1C"]
+            },
+
+        }
+    def __init__(self, base_path:str, prs_configs, hwmon_name: str = 'max34417') -> list[PowerRailSensor]:
+        requested_channels = [prs_config.get('channel_name') for prs_config in prs_configs]
+        
+        power_rail_hwmons = get_all_paths(base_path, hwmon_name)
+        model_stdout = subprocess.run(['vrdevice_path', 'model'], capture_output=True, text=True).stdout
+
+        power_rail_sensors = []
+        for hwmon in power_rail_hwmons:
+            node = (hwmon / 'of_node').resolve()
+            register = int(node.stem.split('@')[-1], 16) #convert hex value
+            model = 'ev2' if "EV1" in model_stdout or "EV2" in model_stdout else 'ev3'
+            channels = self.channel_definitions.get(model).get(register)
+            for index, channel in enumerate(channels):
+                # check if channel is requested in config
+                if channel in requested_channels:
+                    for config in prs_configs:
+                        if config.get('channel_name') == channel:
+                            prs = PowerRailSensor(
+                                hwmon_path=hwmon,
+                                sensor_idex=index,
+                                config=config,
+                                t_fast=self.fast_loop_interval,
+                                t_slow=self.slow_loop_interval,
+                                )
+                            power_rail_sensors.append(prs)
+        print(f'initialized {len(power_rail_sensors)} power rail sensors')
 
 class IIOSensor:
     """IIO temp sensors"""
