@@ -776,6 +776,9 @@ class FanController:
                                 t_slow=self.slow_loop_interval,
                                 )
                             power_rail_sensors.append(prs)
+                            print(f'init prs {channel}')
+                else:
+                    print(f'skip prs {channel}')
         print(f'initialized {len(power_rail_sensors)} power rail sensors')
         return power_rail_sensors
 
