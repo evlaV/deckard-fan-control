@@ -62,6 +62,9 @@ power_rail_sensors:
   - channel_name: APC2 Cores
     nice_name: P_APC2
     sensor_time_avg: 24
+  - channel_name: VPH
+    nice_name: P_VPH
+    sensor_time_avg: 24
 
 iiosensors:
   - sensor_name: in_temp_pcba_at_40pin_connector_input
