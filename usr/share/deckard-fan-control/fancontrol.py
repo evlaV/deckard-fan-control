@@ -197,6 +197,7 @@ class Fan:
         self.fan_hysteresis = config["fan_hysteresis"]
         self.fc_speed = 0
         self.measured_speed = 0
+        self.nohyst_speed = 0
         self.time_on = 0
         self.cold_off = True
         self.charge_state = False
@@ -266,6 +267,7 @@ class Fan:
             self.time_on = int(time.time())
             self.cold_off = False
 
+        self.nohyst_speed = speed
         speed = self._apply_hysteresis(speed)
         self.fc_speed = speed
         try:
@@ -806,7 +808,7 @@ class FanController:
         #     f"{self.power_sensor.nice_name}: {self.power_sensor.value:.1f}/{self.power_sensor.avg_value:.1f}  ",
         #     end="",
         # )
-        print(f"Fan[{source_name}]: {int(self.fan.fc_speed)}/{self.fan.measured_speed}")
+        print(f"Fan[{source_name}]: {int(self.fan.nohyst_speed)}/{int(self.fan.fc_speed)}/{int(self.fan.measured_speed)}")
 
     def log_header(self):
         header = ["TIMESTAMP"]
