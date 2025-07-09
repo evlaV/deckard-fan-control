@@ -1,8 +1,8 @@
 # YAML config file for juputer-fan-control.service
 
-fast_loop_interval: 1 # 1 hz
+fast_loop_interval: .2 # 1 hz
 slow_loop_interval: 5
-control_loop_ratio: 1
+control_loop_ratio: 5
 # log_write_ratio: 60 # uncomment to reduce disk writes
 log_write_ratio: 1
 
