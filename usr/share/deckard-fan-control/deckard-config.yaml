@@ -50,18 +50,18 @@ B_ff_control: &B_ff_control -1
 temp_hysteresis: &temp_hysteresis 5
 
 power_rail_sensors:
-  - channel_name: GFX
-    nice_name: P_GFX
-    sensor_time_avg: 24
-  - channel_name: APC0 Cores
-    nice_name: P_APC0
-    sensor_time_avg: 24
-  - channel_name: APC1 Cores
-    nice_name: P_APC1
-    sensor_time_avg: 24
-  - channel_name: APC2 Cores
-    nice_name: P_APC2
-    sensor_time_avg: 24
+  # - channel_name: GFX
+  #   nice_name: P_GFX
+  #   sensor_time_avg: 24
+  # - channel_name: APC0 Cores
+  #   nice_name: P_APC0
+  #   sensor_time_avg: 24
+  # - channel_name: APC1 Cores
+  #   nice_name: P_APC1
+  #   sensor_time_avg: 24
+  # - channel_name: APC2 Cores
+  #   nice_name: P_APC2
+  #   sensor_time_avg: 24
   - channel_name: VPH
     nice_name: P_VPH
     sensor_time_avg: 24
