@@ -18,7 +18,6 @@ fan_gain: 10
 fan_rpm_scale: 2 # delta fan tach is 2 periods for 1 revolution
 ec_ramp_rate: 10
 
-fan_hysteresis: 15
 
 # We set all the fan control devices with the same curve,
 # so that there isn't a discountinous jump when we switch
@@ -49,7 +48,9 @@ B_ff_control: &B_ff_control 0
 
 # temp_hysterises is the degrees C a device must drop
 # before it will change to a lower control output
-temp_hysteresis: &temp_hysteresis 1
+# fan_hysteresis: 15
+fan_hysteresis: 0
+temp_hysteresis: &temp_hysteresis 20
 
 power_rail_sensors:
   # - channel_name: GFX

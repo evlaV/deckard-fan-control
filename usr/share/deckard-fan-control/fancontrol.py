@@ -242,7 +242,7 @@ class Fan:
         elif new_speed < self._hyst_min:
             self._hyst_min = new_speed
             self._hyst_max = new_speed + self.fan_hysteresis
-            return new_speed
+            # return new_speed
             return self._hyst_max # always return top of systeresis window, to reduce step changes
         else:
             return self.fc_speed  # within hysteresis window
