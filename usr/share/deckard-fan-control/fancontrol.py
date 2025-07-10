@@ -242,7 +242,8 @@ class Fan:
         elif new_speed < self._hyst_min:
             self._hyst_min = new_speed
             self._hyst_max = new_speed + self.fan_hysteresis
-            return new_speed
+            # return new_speed
+            return self._hyst_max # always return top of systeresis window, to reduce step changes
         else:
             return self.fc_speed  # within hysteresis window
         
@@ -268,8 +269,7 @@ class Fan:
             self.cold_off = False
 
         self.nohyst_speed = speed
-        speed = self._apply_hysteresis(speed)
-        self.fc_speed = speed
+        self.fc_speed = self._apply_hysteresis(speed)
         try:
             with open(self.fan_path + "pwm1", "w", encoding="utf8") as f: #FIXME fan1_target --> pwm1, make this change less hidden
                 f.write(str(int(self.fc_speed)))
