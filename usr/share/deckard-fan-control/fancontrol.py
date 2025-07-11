@@ -154,7 +154,7 @@ class FeedForwardQuad:
         ff_output = self.get_ff_setpoint(power_input)
         # min_setpoint = self.get_min_setpoint(temp_input)
         self.output = quad_output + ff_output
-        self.print_ff_state(ff_output, quad_output)
+        # self.print_ff_state(ff_output, quad_output)
         return self.output
 
 class Dummy:
@@ -918,7 +918,7 @@ class FanController:
                 device for device in self.devices if device.control_output == max_output
             ).nice_name
             # print all values
-            self.print_single(source_name) #FIXME disable this for prod
+            # self.print_single(source_name) #FIXME disable this for prod
             # log all values
             try:
                 self.log_single(source_name)
@@ -974,6 +974,7 @@ if __name__ == "__main__":
     if len(args) == 2:
         command = args[1]
         if command == "--run":
+            print(f'DFC: Running w/ experimental EV3.1 Tuning') #FIXME: remove this journal notice for prod
             controller.loop_control()
 
     # otherwise, exit cleanly
