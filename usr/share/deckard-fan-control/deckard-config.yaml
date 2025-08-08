@@ -1,8 +1,8 @@
 # YAML config file for juputer-fan-control.service
 
-fast_loop_interval: 1 # 1 hz
-slow_loop_interval: 5
-control_loop_ratio: 1
+fast_loop_interval: .2 # hz
+slow_loop_interval: 1
+control_loop_ratio: 5
 # log_write_ratio: 60 # uncomment to reduce disk writes
 log_write_ratio: 1
 
@@ -11,33 +11,49 @@ charge_state_path: none # disabled on deckard
 
 fan_hwmon_name: slg4ax46073v
 fan_min_speed: 30
-fan_threshold_speed: 0
+fan_threshold_speed: 30
 fan_max_speed: 55
 fan_min_time_on: 90
 fan_gain: 10
 fan_rpm_scale: 2 # delta fan tach is 2 periods for 1 revolution
 ec_ramp_rate: 10
 
+
 # We set all the fan control devices with the same curve,
 # so that there isn't a discountinous jump when we switch
 # the fan control source
 # you can use the line below in wolfram alpha to define a curve
-# quadratic fit (40,25)(70,35)(80,40)(90,45)
-A_quad_control: &A_quad_control 0.00318
-B_quad_control: &B_quad_control -0.0110
-C_quad_control: &C_quad_control 20.345
 
-# temp_hysterises is the degrees C a device must drop
-# before it will change to a lower control output
-temp_hysteresis: &temp_hysteresis 20
+A_quad_control: &A_quad_control 0.00762431
+B_quad_control: &B_quad_control -0.526519
+C_quad_control: &C_quad_control 28.8287
+# quadratic fit (40,20)(70,29)(80,36)(90,43)
 
-deckardpowersensor:
-  - sensor_name: power_avg_recent
-    base_path: /sys/bus/iio/devices/iio:device1/
-    nice_name: P_BAT
-    sensor_avg_name: power_avg
-    watts_conversion_factor: 1000
-    enable_on_start: True # Deckard power sensor needs to be started after reboot
+A_ff_control: &A_ff_control 1.5
+B_ff_control: &B_ff_control -15
+# linear fit (10,0),(20,15)
+
+fan_hysteresis: 13
+temp_hysteresis: &temp_hysteresis 1
+
+power_rail_sensors:
+  # - channel_name: GFX
+  #   nice_name: P_GFX
+  #   sensor_time_avg: 24
+  # - channel_name: APC0 Cores
+  #   nice_name: P_APC0
+  #   sensor_time_avg: 24
+  # - channel_name: APC1 Cores
+  #   nice_name: P_APC1
+  #   sensor_time_avg: 24
+  # - channel_name: APC2 Cores
+  #   nice_name: P_APC2
+  #   sensor_time_avg: 24
+
+  # for now, using this single PRS for feed forward input
+  - channel_name: VPH
+    nice_name: P_VPH
+    sensor_time_avg: 24
 
 iiosensors:
   - sensor_name: in_temp_pcba_at_40pin_connector_input
@@ -77,10 +93,9 @@ devices:
     A_quad: *A_quad_control
     B_quad: *B_quad_control
     C_quad: *C_quad_control
-    A_ff: .03333
-    B_ff: -.03333
-    # quadratic fit (40,25)(75,40)(90,50)
-    # linear fit (1,0),(10,.3)
+    A_ff: *A_ff_control
+    B_ff: *B_ff_control
+
 
   - hwmon_name: cpu0_thermal
     nice_name: C0
@@ -93,10 +108,9 @@ devices:
     A_quad: *A_quad_control
     B_quad: *B_quad_control
     C_quad: *C_quad_control
-    A_ff: .03333
-    B_ff: -.03333
-    # quadratic fit (40,25)(75,40)(90,50)
-    # linear fit (1,0),(10,.3)
+    A_ff: *A_ff_control
+    B_ff: *B_ff_control
+
 
   - hwmon_name: cpu1_thermal
     nice_name: C1
@@ -109,10 +123,9 @@ devices:
     A_quad: *A_quad_control
     B_quad: *B_quad_control
     C_quad: *C_quad_control
-    A_ff: .03333
-    B_ff: -.03333
-    # quadratic fit (40,25)(75,40)(90,50)
-    # linear fit (1,0),(10,.3)
+    A_ff: *A_ff_control
+    B_ff: *B_ff_control
+
   
   - hwmon_name: cpu2_bottom_thermal
     nice_name: C2
@@ -125,10 +138,9 @@ devices:
     A_quad: *A_quad_control
     B_quad: *B_quad_control
     C_quad: *C_quad_control
-    A_ff: .03333
-    B_ff: -.03333
-    # quadratic fit (40,25)(75,40)(90,50)
-    # linear fit (1,0),(10,.3)
+    A_ff: *A_ff_control
+    B_ff: *B_ff_control
+
   
   - hwmon_name: cpu3_bottom_thermal
     nice_name: C3
@@ -141,10 +153,9 @@ devices:
     A_quad: *A_quad_control
     B_quad: *B_quad_control
     C_quad: *C_quad_control
-    A_ff: .03333
-    B_ff: -.03333
-    # quadratic fit (40,25)(75,40)(90,50)
-    # linear fit (1,0),(10,.3)
+    A_ff: *A_ff_control
+    B_ff: *B_ff_control
+
   
   - hwmon_name: cpu4_bottom_thermal
     nice_name: C4
@@ -157,10 +168,9 @@ devices:
     A_quad: *A_quad_control
     B_quad: *B_quad_control
     C_quad: *C_quad_control
-    A_ff: .03333
-    B_ff: -.03333
-    # quadratic fit (40,25)(75,40)(90,50)
-    # linear fit (1,0),(10,.3)
+    A_ff: *A_ff_control
+    B_ff: *B_ff_control
+
   
   - hwmon_name: cpu5_bottom_thermal
     nice_name: C5
@@ -173,10 +183,9 @@ devices:
     A_quad: *A_quad_control
     B_quad: *B_quad_control
     C_quad: *C_quad_control
-    A_ff: .03333
-    B_ff: -.03333
-    # quadratic fit (40,25)(75,40)(90,50)
-    # linear fit (1,0),(10,.3)
+    A_ff: *A_ff_control
+    B_ff: *B_ff_control
+
 
   - hwmon_name: cpu6_bottom_thermal
     nice_name: C6
@@ -189,10 +198,9 @@ devices:
     A_quad: *A_quad_control
     B_quad: *B_quad_control
     C_quad: *C_quad_control
-    A_ff: .03333
-    B_ff: -.03333
-    # quadratic fit (40,25)(75,40)(90,50)
-    # linear fit (1,0),(10,.3)
+    A_ff: *A_ff_control
+    B_ff: *B_ff_control
+
 
   - hwmon_name: gpuss_0_thermal
     nice_name: G0
@@ -205,10 +213,9 @@ devices:
     A_quad: *A_quad_control
     B_quad: *B_quad_control
     C_quad: *C_quad_control
-    A_ff: .03333
-    B_ff: -.03333
-    # quadratic fit (40,25)(75,40)(90,50)
-    # linear fit (1,0),(10,.3)
+    A_ff: *A_ff_control
+    B_ff: *B_ff_control
+
 
   - hwmon_name: gpuss_1_thermal
     nice_name: G1
@@ -221,10 +228,9 @@ devices:
     A_quad: *A_quad_control
     B_quad: *B_quad_control
     C_quad: *C_quad_control
-    A_ff: .03333
-    B_ff: -.03333
-    # quadratic fit (40,25)(75,40)(90,50)
-    # linear fit (1,0),(10,.3)
+    A_ff: *A_ff_control
+    B_ff: *B_ff_control
+
 
   - hwmon_name: gpuss_2_thermal
     nice_name: G2
@@ -237,10 +243,9 @@ devices:
     A_quad: *A_quad_control
     B_quad: *B_quad_control
     C_quad: *C_quad_control
-    A_ff: .03333
-    B_ff: -.03333
-    # quadratic fit (40,25)(75,40)(90,50)
-    # linear fit (1,0),(10,.3)
+    A_ff: *A_ff_control
+    B_ff: *B_ff_control
+
 
   - hwmon_name: gpuss_3_thermal
     nice_name: G3
@@ -253,10 +258,9 @@ devices:
     A_quad: *A_quad_control
     B_quad: *B_quad_control
     C_quad: *C_quad_control
-    A_ff: .03333
-    B_ff: -.03333
-    # quadratic fit (40,25)(75,40)(90,50)
-    # linear fit (1,0),(10,.3)
+    A_ff: *A_ff_control
+    B_ff: *B_ff_control
+
 
   - hwmon_name: gpuss_4_thermal
     nice_name: G4
@@ -269,7 +273,6 @@ devices:
     A_quad: *A_quad_control
     B_quad: *B_quad_control
     C_quad: *C_quad_control
-    A_ff: .03333
-    B_ff: -.03333
-    # quadratic fit (40,25)(75,40)(90,50)
-    # linear fit (1,0),(10,.3)
+    A_ff: *A_ff_control
+    B_ff: *B_ff_control
+
