@@ -1,0 +1,166 @@
+#! /usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import os
+import sys
+import glob
+import argparse
+
+slg4ax46073v_folder = None
+slg4ax46073v_names = None
+
+
+def get_folder():
+    ''' Get the HWMON Folder for the slg4ax46073v '''
+    global slg4ax46073v_folder
+
+    if slg4ax46073v_folder is not None:
+        # slg4a Folder has already been found, return cached value
+        return slg4ax46073v_folder
+
+    # Get all the HWMON folders via wildcard
+    hwmon_folders = glob.glob('/sys/class/hwmon/hwmon*')
+
+    for hwf in hwmon_folders:
+        # Iterate through each folder until we find one named
+
+        name_file = os.path.join(hwf, 'name')
+        # Read Name
+        with open(name_file, 'rt') as fd:
+            name = fd.read().strip()
+
+        if name == 'slg4ax46073v':
+            # Found the slg4a 
+
+            # Set slg4a Folder
+            slg4ax46073v_folder = hwf
+
+            # Return it
+            return slg4ax46073v_folder
+
+    # Nothing Found
+    raise ValueError('No slg4a found on the system')
+
+    return None
+
+
+def set_fixed_fan_pwm(pwm):
+    ''' Set the Fan to a Fixed PWM '''
+
+    # Check the PWM
+    if pwm < 0.0 or pwm > 100.0:
+        raise ValueError('SLGA4A requires PWM between 0 and 100 %%')
+
+    # Get the slg4a Folder
+    folder = get_folder()
+
+    # Linux >= 5.12
+    pwm_file = os.path.join(folder, 'pwm1')
+
+    pwm_str = str(round(pwm))
+
+    try:
+        # Linux < 5.12
+        # Set Fan PWM for all 48 setpoints
+        for i in range(0, 48):
+            pwm_file = os.path.join(
+                folder, 'pwm1_auto_point{:02d}_pwm'.format(i))
+
+            # Write PWM
+            with open(pwm_file, 'wt') as fd:
+                fd.write(pwm_str)
+    except:
+        # Linux >= 5.12
+        pwm_file = os.path.join(folder, 'pwm1')
+
+        # Write PWM
+        with open(pwm_file, 'wt') as fd:
+            fd.write(pwm_str)
+
+
+def print_info(escape_seq=""):
+    ''' Print Info about the SLGA4A '''
+
+    # Get the slga4a Folder
+    folder = get_folder()
+
+    # Get Fan 1 RPM
+    with open(os.path.join(folder, 'fan1_input'), 'rt') as fd:
+        # delta fans report 2 periods per revolution
+        rpm1 = int(fd.read()) / 2
+
+    # Get PWM
+    with open(os.path.join(folder, 'pwm1'), 'rt') as fd:
+        pwm = int(fd.read())
+
+    print('\n{:s} ---- SLGA4A ----'.format(escape_seq))
+    print('{:s}{: >20s}: {:.0f} RPM'.format(escape_seq, 'Fan 1', rpm1 ))
+    print('{:s}{: >20s}: {:0.01f} %'.format(
+        escape_seq, 'PWM', pwm))
+
+
+def get_names():
+    ''' Get the names for the sensors associated with the slg4ax46073v '''
+    global slg4ax46073v_names
+
+    # Check for the cached value
+    if slg4ax46073v_names is not None:
+        return slg4ax46073v_names
+
+    # Get the slg4a Folder
+    folder = get_folder()
+
+    # Pack these as a tuple so we can find the write values later
+    slg4ax46073v_names = []
+    slg4ax46073v_names.append('slg4a_Fan_1_RPM')
+    slg4ax46073v_names.append('slg4a_PWM')
+
+    return slg4ax46073v_names
+
+
+def get_values():
+    ''' Get the values as a name/value dictionary for the sensors associated with the slg4ax46073v '''
+
+    values = {}
+
+    # Get the slg4a Folder
+    folder = get_folder()
+
+    # Get the Sensor Names
+    names = get_names()
+
+    # Get Fan 1 RPM
+    with open(os.path.join(folder, 'fan1_input'), 'rt') as fd:
+        # delta fans report 2 periods per revolution
+        values[names[0]] = '{:0.0f}'.format(int(fd.read()) / 2)
+
+    # Get PWM
+    with open(os.path.join(folder, 'pwm1'), 'rt') as fd:
+        values[names[1]] = '{:0.01f}'.format(int(fd.read()))
+
+    return (values)
+
+
+def main():
+    ''' Allow a few things to be run '''
+
+    parser = argparse.ArgumentParser(
+        description='Interact with the SLG4A HWMON sysfs interface')
+    parser.add_argument('-s', '--set_pwm', type=float,
+                        help='Set Fixed Fan PWM')
+    parser.add_argument('-p', '--print', action='store_true',
+                        help='Show the RPM and PWM')
+    args = parser.parse_args()
+
+    if args.set_pwm is not None:
+        # Set a Fixed PWM
+        set_fixed_fan_pwm(args.set_pwm)
+
+    if args.print is True:
+        # Print Info about the SLG4A 
+        print_info()
+
+
+if __name__ == "__main__":
+    # Run Main
+    sys.exit(main())
