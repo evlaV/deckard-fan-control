@@ -7,11 +7,11 @@ control_loop_ratio: 5
 log_write_ratio: 1
 
 base_hwmon_path: /sys/class/hwmon/
-charge_state_path: none # disabled on deckard
+charge_state_path: /sys/class/power_supply/pm8550b-charger/status
 
 fan_hwmon_name: slg4ax46073v
 fan_min_speed: 30
-fan_threshold_speed: 30
+fan_charging_min_speed: 40
 fan_max_speed: 55
 fan_min_time_on: 90
 fan_gain: 10

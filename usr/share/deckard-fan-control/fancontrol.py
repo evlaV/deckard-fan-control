@@ -186,7 +186,7 @@ class Fan:
         self.fan_path = fan_path
         self.charge_state_path = config["charge_state_path"]
         self.min_speed = config["fan_min_speed"]
-        self.threshold_speed = config["fan_threshold_speed"]
+        self.charge_min_speed = config["fan_charging_min_speed"]
         self.max_speed = config["fan_max_speed"]
         self.min_time_on = config["fan_min_time_on"]
         self.gain = config["fan_gain"]
@@ -219,8 +219,6 @@ class Fan:
         
     def get_charge_state(self) -> bool:
         """updates min rpm depending on charge state"""
-        #FIXME hodged for deckard, always return false
-        return False
 
         with open(self.charge_state_path, "r", encoding="utf8") as f:
             state = f.read().strip()
@@ -252,19 +250,24 @@ class Fan:
         # overspeed commanded, set to max
         if speed > self.max_speed:
             speed = self.max_speed
-        elif speed < self.threshold_speed: #TODO consider simplifying this logic for Deckard
-            if self.cold_off:
-                speed = self.min_speed
-            elif int(time.time()) - self.time_on >= self.min_time_on:
-                speed = self.min_speed  # if min_time satisfied, turn off
-                self.cold_off = True
-            else:
-                speed = self.threshold_speed  # else stay at threshold
+        elif self.charge_state:
+            if speed < self.charge_min_speed:
+                speed = self.charge_min_speed
+        elif speed < self.min_speed:
+            speed = self.min_speed
+        # elif speed < self.threshold_speed: #TODO consider simplifying this logic for Deckard #TODO re-enable logic for deckard -> deck merge
+        #     if self.cold_off:
+        #         speed = self.min_speed
+        #     elif int(time.time()) - self.time_on >= self.min_time_on:
+        #         speed = self.min_speed  # if min_time satisfied, turn off
+        #         self.cold_off = True
+        #     else:
+        #         speed = self.threshold_speed  # else stay at threshold
 
         # make note of when fan is turned on
-        if speed > self.min_speed and self.cold_off:
-            self.time_on = int(time.time())
-            self.cold_off = False
+        # if speed > self.min_speed and self.cold_off:
+        #     self.time_on = int(time.time())
+        #     self.cold_off = False
 
         self.nohyst_speed = speed
         self.fc_speed = self._apply_hysteresis(speed)
