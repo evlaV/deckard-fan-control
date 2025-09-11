@@ -227,6 +227,8 @@ class Fan:
             self.charge_state = True
         else:
             self.charge_state = False
+
+        print(f'Charge State: {self.charge_state}') #FIXME remove print debug statements
         return self.charge_state
 
 
