@@ -199,6 +199,7 @@ class Fan:
         self.time_on = 0
         self.cold_off = True
         self.charge_state = False
+        self.charge_min_speed = self.threshold_speed #TODO check this value
         self.has_std_bios = True
 
         self._hyst_min = 0
@@ -219,8 +220,6 @@ class Fan:
         
     def get_charge_state(self) -> bool:
         """updates min rpm depending on charge state"""
-        #FIXME hodged for deckard, always return false
-        return False
 
         with open(self.charge_state_path, "r", encoding="utf8") as f:
             state = f.read().strip()
@@ -252,6 +251,9 @@ class Fan:
         # overspeed commanded, set to max
         if speed > self.max_speed:
             speed = self.max_speed
+        elif self.charge_state:
+            if speed < self.charge_min_speed:
+                speed = self.charge_min_speed
         elif speed < self.threshold_speed: #TODO consider simplifying this logic for Deckard
             if self.cold_off:
                 speed = self.min_speed
