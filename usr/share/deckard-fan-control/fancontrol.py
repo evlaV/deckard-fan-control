@@ -260,7 +260,7 @@ class Fan:
             # also reset hysteresis values
             self._reset_hysteresis()
 
-        # elif speed < self.threshold_speed: #TODO consider simplifying this logic for Deckard #TODO re-enable logic for deckard -> deck merge
+        # elif speed < self.threshold_speed: #TODO re-enable cold-start logic for deckard -> deck merge
         #     if self.cold_off:
         #         speed = self.min_speed
         #     elif int(time.time()) - self.time_on >= self.min_time_on:
