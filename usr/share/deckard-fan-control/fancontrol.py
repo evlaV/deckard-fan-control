@@ -201,11 +201,9 @@ class Fan:
         self.charge_state = False
         self.has_std_bios = True
 
-        self._hyst_min = 0
-        self._hyst_max = 0
-
+        self._reset_hysteresis()
         self.set_speed(self.min_speed)
-        time.sleep(.2)
+        # time.sleep(.2)
 
     def get_speed(self) -> int:
         """returns the measured (real) fan speed"""
@@ -227,6 +225,10 @@ class Fan:
         else:
             self.charge_state = False
         return self.charge_state
+    
+    def _reset_hysteresis(self):
+        self._hyst_min = 0
+        self._hyst_max = 0
 
 
     def _apply_hysteresis(self, new_speed: float) -> float:
@@ -253,9 +255,12 @@ class Fan:
         elif self.charge_state:
             if speed < self.charge_min_speed:
                 speed = self.charge_min_speed
-        elif speed < self.min_speed:
+        elif speed <= self.min_speed:
             speed = self.min_speed
-        # elif speed < self.threshold_speed: #TODO consider simplifying this logic for Deckard #TODO re-enable logic for deckard -> deck merge
+            # also reset hysteresis values
+            self._reset_hysteresis()
+
+        # elif speed < self.threshold_speed: #TODO re-enable cold-start logic for deckard -> deck merge
         #     if self.cold_off:
         #         speed = self.min_speed
         #     elif int(time.time()) - self.time_on >= self.min_time_on:
