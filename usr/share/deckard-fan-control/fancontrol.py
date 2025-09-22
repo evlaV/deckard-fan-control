@@ -840,6 +840,7 @@ class FanController:
 
 # main
 if __name__ == "__main__":
+    script_dir = os.path.dirname(os.path.realpath(__file__))
 
     # dmi_id = DmiId()
 
@@ -853,9 +854,8 @@ if __name__ == "__main__":
     #     )
 
     # Deckard doesn't have a DMI_ID, we just hardcode which thing to load:
-    # config_file_path = "/usr/share/deckard-fan-control/deckard-config.yaml"
-    config_file_path = "./usr/share/deckard-fan-control/deckard-config.yaml"
-
+    # Note, we use a path relative to this script, so that if you're doing development, it loads your development `.yaml` file.
+    config_file_path = f"{script_dir}/deckard-config.yaml"
     controller = FanController(config_file=config_file_path)
 
     # # catch fan service trying to start before the hwmonitors are fully loaded
