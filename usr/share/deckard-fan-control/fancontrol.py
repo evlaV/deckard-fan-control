@@ -252,13 +252,17 @@ class Fan:
         # overspeed commanded, set to max
         if speed > self.max_speed:
             speed = self.max_speed
-        elif self.charge_state:
+
+        # apply output hysteresis
+        self.nohyst_speed = speed
+        speed =  self._apply_hysteresis(speed)
+
+        # bound speed by minimum, taking into account charge state
+        if self.charge_state:
             if speed < self.charge_min_speed:
                 speed = self.charge_min_speed
         elif speed <= self.min_speed:
             speed = self.min_speed
-            # also reset hysteresis values
-            self._reset_hysteresis()
 
         # elif speed < self.threshold_speed: #TODO re-enable cold-start logic for deckard -> deck merge
         #     if self.cold_off:
@@ -274,8 +278,7 @@ class Fan:
         #     self.time_on = int(time.time())
         #     self.cold_off = False
 
-        self.nohyst_speed = speed
-        self.fc_speed = self._apply_hysteresis(speed)
+        self.fc_speed = speed
         try:
             with open(self.fan_path + "pwm1", "w", encoding="utf8") as f: #FIXME fan1_target --> pwm1, make this change less hidden
                 f.write(str(int(self.fc_speed)))
