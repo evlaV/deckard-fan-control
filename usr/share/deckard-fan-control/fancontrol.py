@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 from collections import deque
 import time
+from datetime import datetime
 import math
 import yaml
 import csv
@@ -644,6 +645,9 @@ class FanController:
         # exit handler
         signal.signal(signal.SIGTERM, self.on_exit)
 
+        # track if overtemp has occurred this service run
+        self.overtemp_occurred = False
+
     def initialize_power_rail_sensors(self, base_path:str, prs_configs, hwmon_name: str = 'max34417') -> list[PowerRailSensor]:
         requested_channels = [prs_config.get('channel_name') for prs_config in prs_configs]
         channel_definitions = {
@@ -701,7 +705,7 @@ class FanController:
                 end="",
             )
         for prs in self.power_rail_sensors:
-            print(f"{prs.nice_name}: {prs.get_avg_value():.1f}  ",
+            print(f"{prs.nice_name}: {prs.avg_value():.1f}  ",
                 end="",
             )
         print(f"PRS_SUM: {self.power_rail_sensor_sum:.2f}  ",
@@ -754,6 +758,41 @@ class FanController:
             self.log_file.flush()
             self.unwritten_log_lines = 0
 
+    def switch_to_overtemp_log(self):
+        """Switch to overtemp log file when overheating is detected"""
+        # Generate ISO8601 timestamp (basic format, filesystem-safe)
+        timestamp = datetime.now().strftime("%Y%m%dT%H%M%S")
+
+        # Define paths
+        original_log_path = "/var/log/deckard-fan-control.log"
+        overtemp_log_path = f"/var/log/deckard-fan-control-overtemp-{timestamp}.log"
+
+        try:
+            # Flush and close current log file
+            self.log_file.flush()
+            self.log_file.close()
+
+            # Move current log to overtemp filename
+            if os.path.exists(original_log_path):
+                os.rename(original_log_path, overtemp_log_path)
+
+            # Create symbolic link from original path to overtemp file
+            if os.path.exists(original_log_path):
+                os.remove(original_log_path)
+            os.symlink(overtemp_log_path, original_log_path)
+
+            # Reopen log file (via symlink)
+            self.log_file = open(original_log_path, "a", encoding="utf8", newline="")
+            self.log_writer = csv.writer(self.log_file, delimiter=",")
+
+            # Mark that overtemp has occurred
+            self.overtemp_occurred = True
+
+            print(f"Overtemp detected - logging switched to {overtemp_log_path}")
+
+        except Exception as e:
+            print(f"Error switching to overtemp log: {e}")
+
     def loop_read_sensors(self):
         """internal loop to measure device temps and sensor value"""
         start_time = time.time()
@@ -767,7 +806,7 @@ class FanController:
 
         self.power_rail_sensor_sum = 0
         for prs in self.power_rail_sensors:
-            self.power_rail_sensor_sum += prs.get_avg_value()
+            self.power_rail_sensor_sum += prs.avg_value()
 
         # choose between low and high power loop interval
         # loop_interval = (
@@ -816,6 +855,14 @@ class FanController:
                 device.get_output(self.power_rail_sensor_sum)
             max_output = max(device.control_output for device in self.devices)
             self.fan.set_speed(max_output)
+
+            # check for overtemp condition and switch log file if needed
+            if not self.overtemp_occurred:
+                for device in self.devices:
+                    if device.control_temp >= device.max_temp:
+                        self.switch_to_overtemp_log()
+                        break
+
             # find source name for the max control output
             source_name = next(
                 device for device in self.devices if device.control_output == max_output
