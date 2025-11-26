@@ -701,7 +701,7 @@ class FanController:
                 end="",
             )
         for prs in self.power_rail_sensors:
-            print(f"{prs.nice_name}: {prs.avg_value():.1f}  ",
+            print(f"{prs.nice_name}: {prs.avg_value:.1f}  ",
                 end="",
             )
         print(f"PRS_SUM: {self.power_rail_sensor_sum:.2f}  ",
@@ -767,7 +767,7 @@ class FanController:
 
         self.power_rail_sensor_sum = 0
         for prs in self.power_rail_sensors:
-            self.power_rail_sensor_sum += prs.avg_value()
+            self.power_rail_sensor_sum += prs.avg_value
 
         # choose between low and high power loop interval
         # loop_interval = (
