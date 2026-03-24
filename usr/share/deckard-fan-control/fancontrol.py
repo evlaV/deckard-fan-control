@@ -576,7 +576,7 @@ def get_all_paths(base_path: str, name: str) -> list[Path]:
     for directory in base.iterdir():
         try:
             test_name = (directory / "name").read_text(encoding="utf-8").strip()
-            if test_name == name:
+            if test_name.startswith(name):
                 # print(f"found hwmon {name} at {directory}/")
                 matches.append(
                     directory.resolve()
