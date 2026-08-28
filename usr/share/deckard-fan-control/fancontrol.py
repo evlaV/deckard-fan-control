@@ -138,7 +138,7 @@ class FeedForwardQuad:
             self.ff_last_setpoint = rpm_setpoint
             return rpm_setpoint
         return self.ff_last_setpoint
-    
+
     # if (  # check if temp is increasing, or has decreased past hysteresis
     #         self.avg_temp > self.prev_control_temp
     #         or self.prev_control_temp - self.avg_temp > self.temp_hysteresis
@@ -214,7 +214,7 @@ class Fan:
             print('An exception occurred when attempting to read fan speed: {}'.format(e))
             self.measured_speed = 0
         return self.measured_speed
-        
+
     def get_charge_state(self) -> bool:
         """updates min rpm depending on charge state"""
 
@@ -225,7 +225,7 @@ class Fan:
         else:
             self.charge_state = False
         return self.charge_state
-    
+
     def _reset_hysteresis(self):
         self._hyst_min = 0
         self._hyst_max = 0
@@ -244,8 +244,8 @@ class Fan:
             return self._hyst_max # always return top of systeresis window, to reduce step changes
         else:
             return self.fc_speed  # within hysteresis window
-        
-    
+
+
     def set_speed(self, speed) -> None:
         """sets a new target speed"""
 
@@ -660,14 +660,29 @@ class FanController:
 
         }
         power_rail_hwmons = get_all_paths(base_path, hwmon_name)
-        model_stdout = subprocess.run(['vrdevice_path', 'model'], capture_output=True, text=True).stdout
+        default_model = 'ev3'
+        try:
+            model_stdout = subprocess.run(['vrdevice_path', 'model'], capture_output=True, text=True).stdout
+        except OSError as e:
+            print(f'WARNING: could not query model ({e}); assuming model {default_model!r}')
+            model_stdout = ''
+        model = 'ev2' if "EV1" in model_stdout or "EV2" in model_stdout else default_model
+        model_channels = channel_definitions.get(model, {})
 
         power_rail_sensors = []
+        found_channels = []
         for hwmon in power_rail_hwmons:
             node = (hwmon / 'of_node').resolve()
             register = int(node.stem.split('@')[-1], 16) #convert hex value
-            model = 'ev2' if "EV1" in model_stdout or "EV2" in model_stdout else 'ev3'
-            channels = channel_definitions.get(model).get(register)
+            channels = model_channels.get(register)
+            if channels is None:
+                # Some boards carry extra MAX34417s (e.g. for power monitoring)
+                # beyond what fan control needs for the control loop.
+                # Unless these channels feed the control loop, they can be skipped.
+                # Log in case the skip is unintentional.
+                print(f'skip max34417 @ {register:#04x}: no {model} channel map '
+                      f'(not used for fan control)')
+                continue
             for index, channel in enumerate(channels):
                 # check if channel is requested in config
                 if channel in requested_channels:
@@ -681,9 +696,16 @@ class FanController:
                                 t_slow=self.slow_loop_interval,
                                 )
                             power_rail_sensors.append(prs)
+                            found_channels.append(channel)
                             print(f'init prs {channel}')
                 else:
                     print(f'skip prs {channel}')
+
+        # Ensure all channels needed for the control loop are present
+        missing = [c for c in requested_channels if c and c not in found_channels]
+        if missing:
+            print(f'WARNING: config requested power rail channel(s) {missing} but they were '
+                  f'not found on any mapped monitor -- fan control is running WITHOUT them')
         print(f'initialized {len(power_rail_sensors)} power rail sensors')
         return power_rail_sensors
 
@@ -719,7 +741,7 @@ class FanController:
             header.append(f"{device.nice_name}_TEMP")
             header.append(f"{device.nice_name}_OUT")
         for iiosensor in self.iiosensors:
-            header.append(f"{iiosensor.nice_name}_TEMP")            
+            header.append(f"{iiosensor.nice_name}_TEMP")
         for prs in self.power_rail_sensors:
             header.append(f"{prs.nice_name}")
             header.append(f"{prs.nice_name}_AVG")
@@ -738,9 +760,9 @@ class FanController:
             row.append(int(device.measured_temp))
             row.append(int(device.control_output))
         for iiosensor in self.iiosensors:
-            row.append(int(iiosensor.measured_temp)) 
+            row.append(int(iiosensor.measured_temp))
         for prs in self.power_rail_sensors:
-            row.append(f"{prs.value:.2f}")    
+            row.append(f"{prs.value:.2f}")
             row.append(f"{prs.avg_value:.2f}")
         row.append(f"{self.power_rail_sensor_sum:.2f}")
         # row.append(f"{self.power_sensor.value:.2f}")
